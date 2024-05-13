@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express')
 require('dotenv').config()
 const cors = require('cors')
@@ -34,24 +34,27 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    // Send a ping to confirm a successful connection
+    
+    // Get a handle to the database
     const database = client.db("Restaurant_Management");
     const  products= database.collection("foods");
 
     app.get('/products',async(req,res)=>{
-        const result = await products.find().toArray();
-        res.json(result);
+        const result = await products.find().toArray()
+        res.send(result);
     })
-    app.get('/product/:id',async(req,res)=>{
+    app.get('/products/:id',async(req,res)=>{
         const id = req.params.id;
-        const result = await products.findOne({_id:ObjectId(id)});
-        res.json(result);
+        console.log(id)
+        const quary={_id: new ObjectId(id)}
+        const result = await products.findOne(quary);
+        res.send(result)
     })
 
     app.post('/product',async(req,res)=>{
         const newProduct = req.body;
         const result = await products.insertOne(newProduct);
-        res.json(result);
+        res.send(result);
     })
 
     await client.db("admin").command({ ping: 1 });
