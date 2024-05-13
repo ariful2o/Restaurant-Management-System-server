@@ -49,7 +49,7 @@ async function run() {
       res.send(result);
     })
     app.get('/order/:email', async (req, res) => {
-      const email=req.params.email
+      const email = req.params.email
       const quary = { email: email }
       const result = await order.find(quary).toArray()
       res.send(result);
@@ -63,10 +63,15 @@ async function run() {
     app.get('/products/:id', async (req, res) => {
       const id = req.params.id;
       const quary = { _id: new ObjectId(id) }
-      const result = await products.findOne(quary);
+      const result = await products.findOne(quary)
       res.send(result)
     })
-
+    app.post('/myaddcart', async (req, res) => {
+      const ids = req.body.map(id => new ObjectId(id)); // Convert string IDs to ObjectId instances
+      const query = { _id: { $in: ids } };
+      const result = await products.find(query).toArray();
+      res.send(result);
+    })
 
 
     app.post('/product', async (req, res) => {
@@ -81,7 +86,7 @@ async function run() {
     })
     app.post('/addtocard', async (req, res) => {
       const addToCardDetails = req.body
-      const result = await order.insertOne(addToCard);
+      const result = await addToCard.insertOne(addToCardDetails);
       res.send(result)
     })
 
