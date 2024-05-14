@@ -2,6 +2,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express')
 const jwt = require('jsonwebtoken')
 require('dotenv').config()
+const cookieParser = require('cookie-parser')
 const cors = require('cors')
 const app = express()
 const port = process.env.PORT || 5000
@@ -16,6 +17,7 @@ app.use(cors({
   ],
   credentials: true,
 }))
+app.use(cookieParser())
 
 
 
@@ -51,21 +53,18 @@ async function run() {
 
     //auth api
     app.post('/jwt', async (req, res) => {
+      console.log(req.cookies)
       const email = req.body;
       const token = jwt.sign(email, process.env.ACCESS_TOKEN_SECTET, { expiresIn: '1h' })
-
-
       res.cookie('token', token, cookieOptions).send({ success: true })
     })
 
     // //clearing Token
-    // app.post("/logout", async (req, res) => {
-    //   const user = req.body;
-    //   console.log("logging out", user);
-    //   res
-    //     .clearCookie("token", { ...cookieOptions, maxAge: 0 })
-    //     .send({ success: true });
-    // });
+    app.post("/logout", async (req, res) => {
+      const email=req.body
+      console.log('logOut user',email)
+      res.clearCookie("token", {maxAge: 0 }).send({ success: true });
+    });
 
 
 
