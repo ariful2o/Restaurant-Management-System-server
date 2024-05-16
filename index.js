@@ -19,6 +19,21 @@ app.use(cors({
 }))
 app.use(cookieParser())
 
+const verifyToken = (req, res, next) => {
+  const token = req.cookies?.token
+  if (!token) {
+    return res.status(401).send({ message: "Unauthorized" });
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECTET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+    req.user = decoded
+    next()
+  })
+}
+
+
 
 
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.BD_PASSWORD}@cluster0.0zrlznh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -38,22 +53,23 @@ const cookieOptions = {
   sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
 };
 
+
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
 
 
     // Get a handle to the database
     const database = client.db("Restaurant_Management");
-    const products = database.collection("foods");
+    const foods = database.collection("foods");
     const order = database.collection("order");
     const addToCard = database.collection("addToCard");
 
     //auth api
     app.post('/jwt', async (req, res) => {
-      console.log(req.cookies)
       const email = req.body;
       const token = jwt.sign(email, process.env.ACCESS_TOKEN_SECTET, { expiresIn: '1h' })
       res.cookie('token', token, cookieOptions).send({ success: true })
@@ -61,9 +77,9 @@ async function run() {
 
     // //clearing Token
     app.post("/logout", async (req, res) => {
-      const email=req.body
-      console.log('logOut user',email)
-      res.clearCookie("token", {maxAge: 0 }).send({ success: true });
+      const email = req.body
+      console.log('logOut user', email)
+      res.clearCookie("token", { maxAge: 0 }).send({ success: true });
     });
 
 
@@ -71,10 +87,24 @@ async function run() {
 
 
     //services api
-    app.get('/products', async (req, res) => {
-      const result = await products.find().toArray()
+    app.get('/foods', async (req, res) => {
+      const result = await foods.find().toArray()
       res.send(result);
     })
+    app.get('/foods/:length', async (req, res) => {
+      try {
+        const result = await foods.find().toArray();
+        if (result.length < 6) {
+          return res.json(result);
+        }
+        const slicedResult = result.slice(0, req.params.length);
+        res.send(slicedResult);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        res.status(500).json({ message: 'Internal server error' });
+      }
+    });
+
     app.get('/order/:email', async (req, res) => {
       const email = req.params.email
       const quary = { email: email }
@@ -87,23 +117,40 @@ async function run() {
       const result = await addToCard.find(quary).toArray()
       res.send(result);
     })
-    app.get('/products/:id', async (req, res) => {
+    app.get('/foods/:id', async (req, res) => {
       const id = req.params.id;
       const quary = { _id: new ObjectId(id) }
-      const result = await products.findOne(quary)
+      const result = await foods.findOne(quary)
       res.send(result)
     })
-    app.post('/myaddcart', async (req, res) => {
+    app.post('/myaddcart/:email', async (req, res) => {
+      console.log(req.params.email)
+      // if (req.user.email !== req.params.email) {
+      //   return res.status(403).send({ message: 'forbidden access' })
+      // }
       const ids = req.body.map(id => new ObjectId(id)); // Convert string IDs to ObjectId instances
       const query = { _id: { $in: ids } };
-      const result = await products.find(query).toArray();
+      const result = await foods.find(query).toArray();
+      res.send(result);
+    })
+    app.post('/orders/:email', async (req, res) => {
+      console.log(req.params.email)
+      const ids = req.body.map(id => new ObjectId(id)); // Convert string IDs to ObjectId instances
+      const query = { _id: { $in: ids } };
+      const result = await foods.find(query).toArray();
+      res.send(result);
+    })
+    app.get('/myaddfoods/:email', async (req, res) => {
+      const email = req.params.email
+      const query = { "AddBy.Email": email };
+      const result = await foods.find(query).toArray()
       res.send(result);
     })
 
-
-    app.post('/product', async (req, res) => {
+    //post reequest
+    app.post('/newfood', async (req, res) => {
       const newProduct = req.body;
-      const result = await products.insertOne(newProduct);
+      const result = await foods.insertOne(newProduct);
       res.send(result);
     })
     app.post('/order', async (req, res) => {
@@ -128,9 +175,27 @@ async function run() {
           Quantity: updateqty.Quantity
         },
       }
-      const result = await products.updateOne(quary, doc, options)
+      const result = await foods.updateOne(quary, doc, options)
       res.send(result)
     })
+
+
+    app.delete('/deleteaddtocart/:id', async (req, res) => {
+      const id = req.params.id;
+      const quary = { addCradId: id }
+      const result = await addToCard.deleteOne(quary)
+      res.send(result)
+    })
+
+
+
+    // Express route definition
+    app.get('/foods/limite', async (req, res) => {
+
+    });
+
+
+
 
 
     await client.db("admin").command({ ping: 1 });
