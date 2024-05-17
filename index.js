@@ -21,6 +21,7 @@ app.use(cookieParser())
 
 const verifyToken = (req, res, next) => {
   const token = req.cookies?.token
+  // console.log(token)
   if (!token) {
     return res.status(401).send({ message: "Unauthorized" });
   }
@@ -83,7 +84,7 @@ async function run() {
       res.clearCookie("token", { maxAge: 0 }).send({ success: true });
     });
 
-    
+
     //services api
     app.get('/foods', async (req, res) => {
       const result = await foods.find().toArray()
@@ -103,7 +104,7 @@ async function run() {
       }
     });
 
-    app.get('/order/:email',verifyToken, async (req, res) => {
+    app.get('/order/:email', verifyToken, async (req, res) => {
       const email = req.params.email
       if (req.user.email !== req.params.email) {
         return res.status(403).send({ message: 'forbidden access' })
@@ -112,7 +113,7 @@ async function run() {
       const result = await order.find(quary).toArray()
       res.send(result);
     })
-    app.get('/addtocard/:email',verifyToken, async (req, res) => {
+    app.get('/addtocard/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
       if (req.user.email !== req.params.email) {
         return res.status(403).send({ message: 'forbidden access' })
@@ -127,7 +128,7 @@ async function run() {
       const result = await foods.findOne(quary)
       res.send(result)
     })
-    app.post('/myaddcart/:email',verifyToken, async (req, res) => {
+    app.post('/myaddcart/:email', verifyToken, async (req, res) => {
       if (req.user.email !== req.params.email) {
         return res.status(403).send({ message: 'forbidden access' })
       }
@@ -149,10 +150,10 @@ async function run() {
     app.get('/myaddfoods/:email', verifyToken, async (req, res) => {
       const email = req.params.email
       if (req.user.email !== req.params.email) {
-        return res.status(403).send({ message: 'forbidden access' })
+        res.status(403).send({ message: 'forbidden access' })
+        return
       }
       const query = { "AddBy.Email": email };
-      console.log(req.params.email)
       const result = await foods.find(query).toArray()
       res.send(result);
     })
@@ -197,8 +198,8 @@ async function run() {
       res.send(result)
     })
 
-    // await client.db("admin").command({ ping: 1 });
-    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    await client.db("admin").command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
   } finally {
     // Ensures that the client will close when you finish/error
