@@ -28,6 +28,7 @@ const verifyToken = (req, res, next) => {
     if (err) {
       return res.status(401).send({ message: "Unauthorized" });
     }
+    // console.log(decoded)
     req.user = decoded
     next()
   })
@@ -82,16 +83,13 @@ async function run() {
       res.clearCookie("token", { maxAge: 0 }).send({ success: true });
     });
 
-
-
-
-
+    
     //services api
     app.get('/foods', async (req, res) => {
       const result = await foods.find().toArray()
       res.send(result);
     })
-    app.get('/foods/:length', async (req, res) => {
+    app.get('/foodslength/:length', async (req, res) => {
       try {
         const result = await foods.find().toArray();
         if (result.length < 6) {
@@ -105,14 +103,20 @@ async function run() {
       }
     });
 
-    app.get('/order/:email', async (req, res) => {
+    app.get('/order/:email',verifyToken, async (req, res) => {
       const email = req.params.email
+      if (req.user.email !== req.params.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
       const quary = { email: email }
       const result = await order.find(quary).toArray()
       res.send(result);
     })
-    app.get('/addtocard/:email', async (req, res) => {
+    app.get('/addtocard/:email',verifyToken, async (req, res) => {
       const email = req.params.email;
+      if (req.user.email !== req.params.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
       const quary = { email: email }
       const result = await addToCard.find(quary).toArray()
       res.send(result);
@@ -123,26 +127,32 @@ async function run() {
       const result = await foods.findOne(quary)
       res.send(result)
     })
-    app.post('/myaddcart/:email', async (req, res) => {
-      console.log(req.params.email)
-      // if (req.user.email !== req.params.email) {
-      //   return res.status(403).send({ message: 'forbidden access' })
-      // }
+    app.post('/myaddcart/:email',verifyToken, async (req, res) => {
+      if (req.user.email !== req.params.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
       const ids = req.body.map(id => new ObjectId(id)); // Convert string IDs to ObjectId instances
       const query = { _id: { $in: ids } };
       const result = await foods.find(query).toArray();
       res.send(result);
     })
-    app.post('/orders/:email', async (req, res) => {
-      console.log(req.params.email)
+    app.post('/orders/:email', verifyToken, async (req, res) => {
+      if (req.user.email !== req.params.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
       const ids = req.body.map(id => new ObjectId(id)); // Convert string IDs to ObjectId instances
       const query = { _id: { $in: ids } };
       const result = await foods.find(query).toArray();
       res.send(result);
     })
-    app.get('/myaddfoods/:email', async (req, res) => {
+
+    app.get('/myaddfoods/:email', verifyToken, async (req, res) => {
       const email = req.params.email
+      if (req.user.email !== req.params.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
       const query = { "AddBy.Email": email };
+      console.log(req.params.email)
       const result = await foods.find(query).toArray()
       res.send(result);
     })
@@ -187,19 +197,8 @@ async function run() {
       res.send(result)
     })
 
-
-
-    // Express route definition
-    app.get('/foods/limite', async (req, res) => {
-
-    });
-
-
-
-
-
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
   } finally {
     // Ensures that the client will close when you finish/error
