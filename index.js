@@ -175,7 +175,7 @@ async function run() {
       res.send(result)
     })
 
-
+    // up-date data
     app.put('/updatequantete/:id', async (req, res) => {
       const id = req.params.id;
       const updateqty = req.body
@@ -189,12 +189,38 @@ async function run() {
       const result = await foods.updateOne(quary, doc, options)
       res.send(result)
     })
+    app.put('/updatemyaddedfood/:id', async (req, res) => {
+      const id = req.params.id
+      const updateData = req.body
+      const quary = { _id: new ObjectId(id) }
+      const options = { upsert: true };
+      const doc = {
+        $set: {
+          AddBy: updateData.AddBy,
+          FoodName: updateData.FoodName,
+          FoodImage: updateData.FoodImage,
+          FoodCategory: updateData.FoodCategory,
+          Quantity: updateData.Quantity,
+          Price: updateData.Price,
+          FoodOrigin: updateData.FoodOrigin,
+          Description: updateData.Description
+        }
+      }
+      const result=await foods.updateOne(quary,doc,options)
+      res.send(result)
+    })
 
 
     app.delete('/deleteaddtocart/:id', async (req, res) => {
       const id = req.params.id;
       const quary = { addCradId: id }
       const result = await addToCard.deleteOne(quary)
+      res.send(result)
+    })
+    app.delete('/deletemyfood/:id',async(req,res)=>{
+      const id = req.params.id;
+      const quary = { _id: new ObjectId(id) }
+      const result = await foods.deleteOne(quary)
       res.send(result)
     })
 
