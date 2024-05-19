@@ -35,9 +35,6 @@ const verifyToken = (req, res, next) => {
   })
 }
 
-
-
-
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.BD_PASSWORD}@cluster0.0zrlznh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -55,8 +52,6 @@ const cookieOptions = {
   sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
 };
 
-
-
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -69,6 +64,7 @@ async function run() {
     const foods = database.collection("foods");
     const order = database.collection("order");
     const addToCard = database.collection("addToCard");
+    const gallery=database.collection("gallery")
 
     //auth api
     app.post('/jwt', async (req, res) => {
@@ -157,6 +153,10 @@ async function run() {
       const result = await foods.find(query).toArray()
       res.send(result);
     })
+    app.get('/gallery', async (req, res) => {
+      const result = await gallery.find().toArray()
+      res.send(result);
+    })
 
     //post reequest
     app.post('/newfood', async (req, res) => {
@@ -172,6 +172,11 @@ async function run() {
     app.post('/addtocard', async (req, res) => {
       const addToCardDetails = req.body
       const result = await addToCard.insertOne(addToCardDetails);
+      res.send(result)
+    })
+    app.post('/addgallery', async (req, res) => {
+      const galleryDetails = req.body
+      const result = await gallery.insertOne(galleryDetails);
       res.send(result)
     })
 
@@ -210,7 +215,7 @@ async function run() {
       res.send(result)
     })
 
-
+//delete mothod
     app.delete('/deleteaddtocart/:id', async (req, res) => {
       const id = req.params.id;
       const quary = { addCradId: id }
